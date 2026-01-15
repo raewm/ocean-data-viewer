@@ -1,0 +1,15 @@
+% Nortek Aquadopp Header File
+% Deployment: Test Site 2024
+Instrument: Aquadopp
+
+Number of cells: 10
+Cell size (m): 1.0
+Blanking distance (m): 0.5
+Measurement interval (s): 600
+Coordinate system: ENU
+Sound speed (m/s): 1500.0
+Salinity (ppt): 35.0
+
+Average interval (s): 60
+Measurement load (%): 100
+Power level: HIGH
