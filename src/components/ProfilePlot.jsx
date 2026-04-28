@@ -68,7 +68,10 @@ export default function ProfilePlot({ data, timeIndex = 0 }) {
             range: mode === 'direction' ? [0, 360] : undefined
         },
         yaxis: {
-            title: 'Bin Number (depth)',
+            title: {
+                text: 'Depth (Bin Number)',
+                standoff: 20
+            },
             showgrid: true,
             gridcolor: '#E5E7EB',
             autorange: 'reversed' // Depth increases downward
@@ -76,7 +79,15 @@ export default function ProfilePlot({ data, timeIndex = 0 }) {
         plot_bgcolor: '#F9FAFB',
         paper_bgcolor: 'white',
         hovermode: 'closest',
-        showlegend: true
+        showlegend: true,
+        margin: { l: 100, r: 80, b: 80, t: 80 },
+        legend: {
+            orientation: 'h',
+            yanchor: 'bottom',
+            y: 1.02,
+            xanchor: 'right',
+            x: 1
+        }
     };
 
     const config = {

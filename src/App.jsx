@@ -170,7 +170,7 @@ function App() {
                 <h1>🌊 Ocean Data Viewer</h1>
                 <p>Oceanographic Current Meter Data Analysis &amp; Quality Control</p>
                 <p style={{ fontSize: '0.9rem', marginTop: '0.5rem', opacity: 0.8 }}>
-                    Supports Nortek Aquadopp, AWAC (.wpr, .prf) and Teledyne RDI Workhorse ADCP instruments
+                    Comprehensive analysis and quality control for oceanographic current data
                 </p>
             </div>
 

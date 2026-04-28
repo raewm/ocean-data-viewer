@@ -142,7 +142,10 @@ export default function TimeSeriesPlot({ data, qcResults, parameter = 'velocity'
             gridcolor: '#E5E7EB'
         },
         yaxis: {
-            title: plotData.yAxisLabel,
+            title: {
+                text: plotData.yAxisLabel,
+                standoff: 20
+            },
             showgrid: true,
             gridcolor: '#E5E7EB',
             range: parameter === 'direction' ? [0, 360] : undefined,
@@ -152,10 +155,13 @@ export default function TimeSeriesPlot({ data, qcResults, parameter = 'velocity'
         paper_bgcolor: 'white',
         hovermode: 'closest',
         showlegend: true,
+        margin: { l: 100, r: 80, b: 80, t: 80 },
         legend: {
-            x: 1,
+            orientation: 'h',
+            yanchor: 'bottom',
+            y: 1.02,
             xanchor: 'right',
-            y: 1
+            x: 1
         }
     };
 

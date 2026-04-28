@@ -55,10 +55,10 @@ export default function FileUploader({ onFilesSelected }) {
                 <div className="upload-icon">📊</div>
                 <h3>Drop files here or click to browse</h3>
                 <p className="text-muted">
-                    Supports Nortek (.hdr, .sen, .v1/.v2/.v3, .a1/.a2/.a3, .dat) and RDI (.csv, .txt) files
+                    Supports Nortek and Teledyne RDI instrument data files
                 </p>
                 <p className="text-muted mt-1">
-                    <small>Multiple files can be selected for Nortek instruments</small>
+                    <small>Multiple files can be selected for a single deployment</small>
                 </p>
             </div>
 
@@ -66,7 +66,7 @@ export default function FileUploader({ onFilesSelected }) {
                 id="file-input"
                 type="file"
                 multiple
-                accept=".hdr,.sen,.v1,.v2,.v3,.a1,.a2,.a3,.dat,.csv,.txt"
+                accept=".hdr,.sen,.v1,.v2,.v3,.a1,.a2,.a3,.dat,.csv,.txt,.wpr,.prf,.aqd,.vec,.000,.pd0,.pdo"
                 onChange={handleFileInput}
                 style={{ display: 'none' }}
             />

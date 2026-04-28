@@ -63,11 +63,14 @@ function ContourPlot({ data, metadata }) {
             showgrid: false
         },
         yaxis: {
-            title: metadata.distance?.length > 0 ? 'Depth (m)' : 'Bin Number',
+            title: {
+                text: metadata.distance?.length > 0 ? 'Depth (m)' : 'Bin Number',
+                standoff: 20
+            },
             autorange: 'reversed'
         },
         plot_bgcolor: '#F9FAFB',
-        margin: { l: 60, r: 60, b: 60, t: 80 }
+        margin: { l: 100, r: 100, b: 80, t: 80 }
     };
 
     if (!plotData) {

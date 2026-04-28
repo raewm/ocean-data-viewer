@@ -85,13 +85,16 @@ function SpectrumPlot({ data }) {
             gridcolor: '#E5E7EB'
         },
         yaxis: {
-            title: 'Power (m²/s²/Hz)',
+            title: {
+                text: 'Power (m²/s²/Hz)',
+                standoff: 20
+            },
             type: 'log',
             showgrid: true,
             gridcolor: '#E5E7EB'
         },
         plot_bgcolor: '#F9FAFB',
-        margin: { l: 70, r: 30, b: 60, t: 80 }
+        margin: { l: 100, r: 40, b: 80, t: 80 }
     };
 
     if (!plotData) {
