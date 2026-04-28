@@ -5,10 +5,37 @@ import QAQCPanel from './components/QAQCPanel';
 import ExportPanel from './components/ExportPanel';
 import TimeSeriesPlot from './components/TimeSeriesPlot';
 import ProfilePlot from './components/ProfilePlot';
+import ContourPlot from './components/ContourPlot';
+import SpectrumPlot from './components/SpectrumPlot';
 import DataTable from './components/DataTable';
+import AuditPanel from './components/AuditPanel';
+import MetadataEntryForm from './components/MetadataEntryForm';
 import { ParserFactory } from './parsers/ParserFactory';
 import { QAQCEngine } from './qaqc/QAQCEngine';
-import { filterByTimeRange } from './utils/dataProcessing';
+import { filterByTimeRange, calculateDerivedParameters } from './utils/dataProcessing';
+import { APP_VERSION } from './version';
+
+const AUDIT_DEFAULTS = {
+    project: '',
+    deployment: '',
+    plannedFileSize: '',
+    plannedCurrentEnsembles: '',
+    checks: {
+        pressureReasonable: null,
+        tempReasonable: null,
+        pitchStable: null,
+        rollStable: null,
+        headingReasonable: null,
+        voltageSmooth: null,
+        velocityContourReasonable: null,
+        firstBurstInWater: null,
+        waveDataReasonable: null,
+        excursivePressureContinuous: null,
+        excursivePressureVaries: null,
+        processedWaveContinuous: null,
+        processedWaveReasonable: null,
+    }
+};
 
 function App() {
     const [rawData, setRawData] = React.useState(null);
@@ -17,10 +44,11 @@ function App() {
     const [qcResults, setQcResults] = React.useState(null);
     const [qcSummary, setQcSummary] = React.useState(null);
     const [activeTab, setActiveTab] = React.useState('timeseries');
-    const [selectedParameter, setSelectedParameter] = React.useState('velocity');
+    const [selectedParameter, setSelectedParameter] = React.useState('speed');
     const [timeRange, setTimeRange] = React.useState(null);
     const [isLoading, setIsLoading] = React.useState(false);
     const [isRunningQC, setIsRunningQC] = React.useState(false);
+    const [auditData, setAuditData] = React.useState(AUDIT_DEFAULTS);
 
     const chartRefs = {
         timeseries: React.useRef(),
@@ -34,11 +62,18 @@ function App() {
         try {
             const result = await ParserFactory.parse(files);
 
-            setRawData(result.data);
-            setFilteredData(result.data);
+            // Attach file size to metadata for AuditPanel
+            const totalSizeBytes = Array.from(files).reduce((sum, f) => sum + f.size, 0);
+            result.metadata.actualFileSizeMB = totalSizeBytes / (1024 * 1024);
+
+            const dataWithDerived = calculateDerivedParameters(result.data);
+
+            setRawData(dataWithDerived);
+            setFilteredData(dataWithDerived);
             setMetadata(result.metadata);
             setQcResults(null);
             setQcSummary(null);
+            setAuditData(AUDIT_DEFAULTS);
 
             // Set initial time range
             if (result.data.length > 0) {
@@ -58,6 +93,11 @@ function App() {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    // Handle metadata update from MetadataEntryForm
+    const handleMetadataUpdate = (updatedMetadata) => {
+        setMetadata(updatedMetadata);
     };
 
     // Handle time range change
@@ -128,9 +168,9 @@ function App() {
             {/* Header */}
             <div className="app-header">
                 <h1>🌊 Ocean Data Viewer</h1>
-                <p>Oceanographic Current Meter Data Analysis & Quality Control</p>
+                <p>Oceanographic Current Meter Data Analysis &amp; Quality Control</p>
                 <p style={{ fontSize: '0.9rem', marginTop: '0.5rem', opacity: 0.8 }}>
-                    Supports Nortek Aquadopp, AWAC, and Teledyne RDI Workhorse ADCP instruments
+                    Supports Nortek Aquadopp, AWAC (.wpr, .prf) and Teledyne RDI Workhorse ADCP instruments
                 </p>
             </div>
 
@@ -163,12 +203,18 @@ function App() {
                             </div>
                             <div className="stat-card">
                                 <span className="stat-value">
-                                    {metadata.fields?.length || Object.keys(filteredData[0] || {}).length}
+                                    {metadata.numCells || metadata.fields?.length || Object.keys(filteredData[0] || {}).length}
                                 </span>
-                                <span className="stat-label">Parameters</span>
+                                <span className="stat-label">Depth Cells</span>
                             </div>
                         </div>
                     </div>
+
+                    {/* Metadata Entry / Verification Form */}
+                    <MetadataEntryForm
+                        initialMetadata={metadata}
+                        onMetadataUpdate={handleMetadataUpdate}
+                    />
 
                     {/* Time Range Selector */}
                     <TimeRangeSelector
@@ -200,10 +246,28 @@ function App() {
                                 📊 Profile
                             </button>
                             <button
+                                className={`tab ${activeTab === 'contour' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('contour')}
+                            >
+                                🗺️ Contour
+                            </button>
+                            <button
+                                className={`tab ${activeTab === 'spectrum' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('spectrum')}
+                            >
+                                〰️ Spectrum
+                            </button>
+                            <button
                                 className={`tab ${activeTab === 'table' ? 'active' : ''}`}
                                 onClick={() => setActiveTab('table')}
                             >
                                 📋 Data Table
+                            </button>
+                            <button
+                                className={`tab ${activeTab === 'audit' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('audit')}
+                            >
+                                ✅ Audit
                             </button>
                         </div>
 
@@ -216,12 +280,15 @@ function App() {
                                         value={selectedParameter}
                                         onChange={(e) => setSelectedParameter(e.target.value)}
                                     >
-                                        <option value="velocity">Velocity</option>
+                                        <option value="speed">Speed Magnitude</option>
+                                        <option value="direction">Direction</option>
+                                        <option value="velocity">Velocity (v1)</option>
                                         {filteredData[0]?.temperature !== undefined && <option value="temperature">Temperature</option>}
                                         {filteredData[0]?.heading !== undefined && <option value="heading">Heading</option>}
                                         {filteredData[0]?.pitch !== undefined && <option value="pitch">Pitch</option>}
                                         {filteredData[0]?.roll !== undefined && <option value="roll">Roll</option>}
                                         {filteredData[0]?.pressure !== undefined && <option value="pressure">Pressure</option>}
+                                        {filteredData[0]?.battery !== undefined && <option value="battery">Battery</option>}
                                     </select>
                                 </div>
                                 <TimeSeriesPlot
@@ -236,8 +303,25 @@ function App() {
                             <ProfilePlot data={filteredData} timeIndex={0} />
                         )}
 
+                        {activeTab === 'contour' && (
+                            <ContourPlot data={filteredData} metadata={metadata} />
+                        )}
+
+                        {activeTab === 'spectrum' && (
+                            <SpectrumPlot data={filteredData} />
+                        )}
+
                         {activeTab === 'table' && (
                             <DataTable data={filteredData} qcResults={qcResults} />
+                        )}
+
+                        {activeTab === 'audit' && (
+                            <AuditPanel
+                                data={filteredData}
+                                metadata={metadata}
+                                auditData={auditData}
+                                setAuditData={setAuditData}
+                            />
                         )}
                     </div>
 
@@ -259,7 +343,7 @@ function App() {
                 color: 'var(--text-light)',
                 fontSize: '0.85rem'
             }}>
-                <p>Ocean Data Viewer v1.0 • QA/QC based on IOOS QARTOD standards</p>
+                <p>Ocean Data Viewer v{APP_VERSION} • QA/QC based on IOOS QARTOD standards</p>
             </div>
         </div>
     );

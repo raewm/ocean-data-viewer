@@ -85,7 +85,11 @@ export default function DataTable({ data, qcResults }) {
                     width: 150,
                     valueFormatter: (params) => {
                         if (params.value === null || params.value === undefined) return '';
-                        return typeof params.value === 'number' ? params.value.toFixed(3) : params.value;
+                        const isArray = Array.isArray(params.value);
+                        const val = isArray ? params.value[0] : params.value;
+                        if (val === null || val === undefined) return '';
+                        const formatted = typeof val === 'number' ? val.toFixed(3) : val;
+                        return isArray && params.value.length > 1 ? `${formatted} (Profile)` : formatted;
                     }
                 });
             }

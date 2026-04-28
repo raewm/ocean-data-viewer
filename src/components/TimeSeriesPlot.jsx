@@ -17,9 +17,7 @@ export default function TimeSeriesPlot({ data, qcResults, parameter = 'velocity'
 
         switch (parameter) {
             case 'velocity':
-            case 'speed':
                 values = data.map(r => {
-                    if (r.speed !== undefined) return r.speed;
                     if (r.velocities?.v1) {
                         return Array.isArray(r.velocities.v1) ? r.velocities.v1[0] : r.velocities.v1;
                     }
@@ -30,6 +28,26 @@ export default function TimeSeriesPlot({ data, qcResults, parameter = 'velocity'
                     return null;
                 });
                 yAxisLabel = 'Velocity (m/s)';
+                break;
+
+            case 'speed':
+                values = data.map(r => {
+                    if (r.speed !== undefined) {
+                        return Array.isArray(r.speed) ? r.speed[0] : r.speed;
+                    }
+                    return null;
+                });
+                yAxisLabel = 'Speed (m/s)';
+                break;
+
+            case 'direction':
+                values = data.map(r => {
+                    if (r.direction !== undefined) {
+                        return Array.isArray(r.direction) ? r.direction[0] : r.direction;
+                    }
+                    return null;
+                });
+                yAxisLabel = 'Direction (°)';
                 break;
 
             case 'temperature':
@@ -54,7 +72,12 @@ export default function TimeSeriesPlot({ data, qcResults, parameter = 'velocity'
 
             case 'pressure':
                 values = data.map(r => r.pressure ?? null);
-                yAxisLabel = 'Pressure';
+                yAxisLabel = 'Pressure (dbar)';
+                break;
+
+            case 'battery':
+                values = data.map(r => r.battery ?? null);
+                yAxisLabel = 'Battery (V)';
                 break;
 
             default:
@@ -121,7 +144,9 @@ export default function TimeSeriesPlot({ data, qcResults, parameter = 'velocity'
         yaxis: {
             title: plotData.yAxisLabel,
             showgrid: true,
-            gridcolor: '#E5E7EB'
+            gridcolor: '#E5E7EB',
+            range: parameter === 'direction' ? [0, 360] : undefined,
+            dtick: parameter === 'direction' ? 45 : undefined
         },
         plot_bgcolor: '#F9FAFB',
         paper_bgcolor: 'white',

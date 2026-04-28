@@ -57,13 +57,16 @@ npm run deploy
 2. Visit: https://raewm.github.io/ocean-data-viewer/
 3. Test with your data files!
 
-## Updating Your Code
-
-When you make changes:
-1. Edit files in the `src/` folder
-2. Double-click `deploy-github.bat` (or run `npm run deploy`)
-3. Wait 1-2 minutes
 4. Refresh your browser
+
+### Mandatory Version Increment
+Before every deployment, you MUST increment the application version:
+1.  **MINOR** increment for features (e.g., v1.4.3 -> v1.5.0)
+2.  **PATCH** increment for bug fixes (e.g., v1.5.0 -> v1.5.1)
+
+Update version in:
+- `package.json`
+- `src/App.jsx` footer
 
 ## Troubleshooting
 

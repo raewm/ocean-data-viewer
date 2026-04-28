@@ -116,6 +116,18 @@ Planned for future versions:
 - Spectral analysis tools
 - Custom report generation
 
+## Development Guidelines
+
+### Versioning
+This project follows a strict **MAJOR.MINOR.PATCH** semantic versioning system. All changes MUST be accompanied by a version increment:
+- **MAJOR**: Incompatible API changes or complete architectural overhauls.
+- **MINOR**: New features (backwards compatible) or significant functional enhancements (e.g., v1.4.3 -> v1.5.0).
+- **PATCH**: Bug fixes, performance improvements, or minor styling tweaks.
+
+The version must be updated in:
+1. `package.json` ("version" field)
+2. `src/App.jsx` (Footer display)
+
 ## License
 
 MIT License

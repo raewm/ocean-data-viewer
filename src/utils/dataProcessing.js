@@ -63,6 +63,14 @@ export function calculateStatistics(values) {
  */
 export function extractVelocities(data, component = 'v1') {
     return data.map(record => {
+        // Handle calculated speed and direction
+        if (component === 'speed' && record.speed !== undefined) {
+            return Array.isArray(record.speed) ? record.speed[0] : record.speed;
+        }
+        if (component === 'direction' && record.direction !== undefined) {
+            return Array.isArray(record.direction) ? record.direction[0] : record.direction;
+        }
+
         // Handle Nortek format
         if (record.velocities?.[component]) {
             const vel = record.velocities[component];
@@ -72,17 +80,80 @@ export function extractVelocities(data, component = 'v1') {
         // Handle RDI format
         if (record.velocities) {
             const keys = Object.keys(record.velocities);
-            if (keys.length > 0) {
-                return record.velocities[keys[0]];
+            // If component is generic 'velocity', try to find a sensible default
+            if (component === 'velocity' || component === 'v1') {
+                const key = record.velocities.v1 ? 'v1' : (record.velocities.Vel1 ? 'Vel1' : keys[0]);
+                const vel = record.velocities[key];
+                return Array.isArray(vel) ? vel[0] : vel;
+            }
+            
+            if (record.velocities[component]) {
+                const vel = record.velocities[component];
+                return Array.isArray(vel) ? vel[0] : vel;
             }
         }
 
         // Handle simple speed field
-        if (record.speed !== undefined) {
+        if (record.speed !== undefined && component === 'velocity') {
             return record.speed;
         }
 
         return null;
+    });
+}
+
+/**
+ * Calculate speed and direction from velocity components (v1/East, v2/North)
+ */
+export function calculateDerivedParameters(data) {
+    if (!data || data.length === 0) return data;
+
+    return data.map(record => {
+        if (!record.velocities) return record;
+
+        // Find East (u) and North (v) components
+        // Nortek uses v1, v2; RDI uses Vel1, Vel2 or similar
+        const u = record.velocities.v1 || record.velocities.Vel1 || record.velocities.u;
+        const v = record.velocities.v2 || record.velocities.Vel2 || record.velocities.v;
+
+        if (u === undefined || v === undefined) return record;
+
+        // Handle profile data (arrays)
+        if (Array.isArray(u) && Array.isArray(v)) {
+            const speed = [];
+            const direction = [];
+
+            for (let i = 0; i < u.length; i++) {
+                const valU = u[i];
+                const valV = v[i];
+
+                if (valU === null || valV === null || isNaN(valU) || isNaN(valV)) {
+                    speed.push(null);
+                    direction.push(null);
+                } else {
+                    const s = Math.sqrt(valU * valU + valV * valV);
+                    // Direction in degrees (0-360), where 0 is North, 90 is East
+                    let d = (Math.atan2(valU, valV) * 180 / Math.PI + 360) % 360;
+                    speed.push(parseFloat(s.toFixed(4)));
+                    direction.push(parseFloat(d.toFixed(2)));
+                }
+            }
+
+            return { ...record, speed, direction };
+        } 
+        
+        // Handle single-point data
+        if (typeof u === 'number' && typeof v === 'number') {
+            const speed = Math.sqrt(u * u + v * v);
+            let direction = (Math.atan2(u, v) * 180 / Math.PI + 360) % 360;
+            return { 
+                ...record, 
+                speed: parseFloat(speed.toFixed(4)), 
+                direction: parseFloat(direction.toFixed(2)) 
+            };
+        }
+
+        return record;
     });
 }
 

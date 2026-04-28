@@ -3,91 +3,90 @@
  */
 
 import { NortekParser } from './NortekParser';
+import { NortekBinaryParser } from './NortekBinaryParser';
 import { RDIParser } from './RDIParser';
+import { RDIBinaryParser } from './RDIBinaryParser';
 
 export class ParserFactory {
+    // Nortek binary extensions
+    static NORTEK_BINARY_EXTS = ['wpr', 'prf', 'aqd', 'vec', 'ad2cp', 'wpb'];
+
+    // Nortek ASCII extensions
+    static NORTEK_ASCII_EXTS = ['hdr', 'sen', 'v1', 'v2', 'v3', 'a1', 'a2', 'a3', 'dat'];
+
+    // RDI binary extensions
+    static RDI_BINARY_EXTS = ['000', '001', '002', '003', '004', '005', 'pd0', 'pdo'];
+
     /**
-     * Detect instrument type based on file extensions and content
+     * Detect instrument type and format based on file extensions
      */
-    static detectInstrumentType(files) {
+    static detectParser(files) {
         const fileNames = files.map(f => f.name.toLowerCase());
+        const getExt = name => name.split('.').pop();
 
-        // Check for Nortek file extensions
-        const hasNortekFiles = fileNames.some(name =>
-            name.endsWith('.hdr') ||
-            name.endsWith('.sen') ||
-            name.endsWith('.v1') ||
-            name.endsWith('.v2') ||
-            name.endsWith('.v3') ||
-            name.endsWith('.a1') ||
-            name.endsWith('.a2') ||
-            name.endsWith('.a3')
-        );
-
-        if (hasNortekFiles) {
-            return 'nortek';
+        // Check for Nortek binary files first
+        if (fileNames.some(name => this.NORTEK_BINARY_EXTS.includes(getExt(name)))) {
+            return 'nortek-binary';
         }
 
-        // Check for RDI files (typically .csv or generic ASCII)
+        // Check for RDI binary files
+        if (fileNames.some(name => this.RDI_BINARY_EXTS.includes(getExt(name)))) {
+            return 'rdi-binary';
+        }
+
+        // Check for Nortek ASCII files
+        if (fileNames.some(name => this.NORTEK_ASCII_EXTS.includes(getExt(name)))) {
+            return 'nortek-ascii';
+        }
+
+        // Check for RDI ASCII/CSV files
         const hasRDIFiles = fileNames.some(name =>
             name.includes('rdi') ||
             name.includes('adcp') ||
             name.includes('workhorse')
         );
-
-        if (hasRDIFiles) {
-            return 'rdi';
+        if (hasRDIFiles || fileNames.some(name => name.endsWith('.csv'))) {
+            return 'rdi-ascii';
         }
 
-        // Default based on file extension
-        if (fileNames.some(name => name.endsWith('.csv'))) {
-            return 'rdi'; // Assume RDI for CSV files
-        }
-
-        // If we can't detect, assume Nortek
-        return 'nortek';
+        // Default: try Nortek ASCII
+        return 'nortek-ascii';
     }
 
     /**
-     * Get appropriate parser based on instrument type
+     * Get appropriate parser instance based on detected type
      */
-    static getParser(instrumentType) {
-        switch (instrumentType.toLowerCase()) {
-            case 'nortek':
-            case 'aquadopp':
-            case 'awac':
+    static getParser(parserType) {
+        switch (parserType) {
+            case 'nortek-binary':
+                return new NortekBinaryParser();
+            case 'nortek-ascii':
                 return new NortekParser();
-
-            case 'rdi':
-            case 'teledyne':
-            case 'workhorse':
-            case 'adcp':
+            case 'rdi-binary':
+                return new RDIBinaryParser();
+            case 'rdi-ascii':
                 return new RDIParser();
-
             default:
-                throw new Error(`Unknown instrument type: ${instrumentType}`);
+                throw new Error(`Unknown parser type: ${parserType}`);
         }
     }
 
     /**
-     * Parse files with automatic instrument detection
+     * Parse files with automatic instrument/format detection
      */
     static async parse(files) {
         if (!files || files.length === 0) {
             throw new Error('No files provided');
         }
 
-        // Detect instrument type
-        const instrumentType = this.detectInstrumentType(files);
+        const parserType = this.detectParser(files);
+        const parser = this.getParser(parserType);
 
-        // Get appropriate parser
-        const parser = this.getParser(instrumentType);
+        console.log(`[ParserFactory] Detected parser type: ${parserType}`);
 
-        // Parse files
         const result = await parser.parse(files);
 
-        // Add detection info
-        result.detectedType = instrumentType;
+        result.detectedType = parserType;
 
         return result;
     }
